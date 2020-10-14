@@ -1,0 +1,157 @@
+{
+    "mapping":[
+        {
+            "resourceType":"Practitioner",
+            "fieldsMapping":[
+                {
+                    "csvfieldId":"personid",
+                    "fhirField":"id",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Practitioner"
+                },
+                {
+                    "csvfieldId":"nom",
+                    "fhirField":"text",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"name"
+                },
+                {
+                    "csvfieldId":"sexe",
+                    "fhirField":"gender",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Practitioner"
+                },
+                {
+                    "csvfieldId":"telephone",
+                    "fhirField":"value",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"telecom"
+                }
+            ]
+        },
+        {
+            "resourceType":"PractitionerRole",
+            "fieldsMapping":[
+                {
+                    "csvfieldId":"practitionerroleid",
+                    "fhirField":"id",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"PractitionerRole"
+                },
+                {
+                    "csvfieldId":"specialiteid",
+                    "fhirField":"code",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"code"
+                },
+                {
+                    "csvfieldId":"specialite",
+                    "fhirField":"display",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"code"
+                },
+                {
+                    "csvfieldId":"specialite",
+                    "fhirField":"text",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"code"
+                },
+                {
+                    "csvfieldId":"personid",
+                    "fhirField":"practitioner",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Practitioner"
+                },
+                {
+                    "csvfieldId":"structureid",
+                    "fhirField":"location",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Location"
+                }
+            ]
+        },
+        {
+            "resourceType":"Location",
+            "fieldsMapping":[
+                {
+                    "csvfieldId":"structureid",
+                    "fhirField":"id",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Location"
+                },
+                {
+                    "csvfieldId":"structure",
+                    "fhirField":"name",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"Location"
+                }
+            ]
+        },
+        {
+            "resourceType":"Job-ValueSet",
+            "fieldsMapping":[
+                {
+                    "csvfieldId":"specialiteid",
+                    "fhirField":"code",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"concept"
+                },
+                {
+                    "csvfieldId":"specialite",
+                    "fhirField":"display",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"concept"
+                },
+                {
+                    "csvfieldId":"specialite",
+                    "fhirField":"definition",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"concept"
+                }
+            ]
+        }
+
+    ],
+    "configs":{
+        "defaultTelecomPhoneAttributes":{
+            "use": "mobile",
+            "system": "phone"
+        },
+        "practitionerProfile":"http://ihris.org/fhir/StructureDefinition/ihris-practitioner",
+        "practitionerRoleProfile":"http://ihris.org/fhir/StructureDefinition/ihris-practitioner-role",
+        "jobValueSetDefaultAttributes":
+        {
+            "url": "http://ihris.org/fhir/ValueSet/ihris-job",
+            "id": "ihris-job",
+            "name": "iHRISJob",
+            "title": "iHRIS Job",
+            "status": "active",
+            "experimental": false,
+            "date": "2020-09-25T20:48:33.646Z",
+            "publisher": "iHRIS Foundation",
+            "description": "Sample iHRIS ValueSet for: iHRISJob"
+        }
+
+    },
+    "app":{
+        "port":8000,
+        "dataFilePath":"/home/server-dev/Documents/dev_repo/csvtofhir/data/data.csv",
+        "headersData":["personid","nom","sexe","telephone","structureid","structure","specialiteid","specialite","practitionerroleid"]
+        
+    }
+}
