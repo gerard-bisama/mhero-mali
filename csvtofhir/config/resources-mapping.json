@@ -18,6 +18,13 @@
                     "fhirBaseElement":"name"
                 },
                 {
+                    "csvfieldId":"nom",
+                    "fhirField":"family",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"name"
+                },
+                {
                     "csvfieldId":"sexe",
                     "fhirField":"gender",
                     "active":true,
@@ -145,12 +152,16 @@
             "date": "2020-09-25T20:48:33.646Z",
             "publisher": "iHRIS Foundation",
             "description": "Sample iHRIS ValueSet for: iHRISJob"
+        },
+        "appendCountryCodeToPhoneNumber":{
+            "append":true,
+            "value":"+223"
         }
 
     },
     "app":{
         "port":8000,
-        "dataFilePath":"/home/server-dev/Documents/dev_repo/csvtofhir/data/data.csv",
+        "dataFilePath":"/home/server-dev/Documents/dev_repo/mhero-mali/csvtofhir/data/data.csv",
         "headersData":["personid","nom","sexe","telephone","structureid","structure","specialiteid","specialite","practitionerroleid"]
         
     }

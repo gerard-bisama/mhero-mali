@@ -66,7 +66,7 @@ function setupApp () {
         let sorted=_.sortBy(stooges, 'age');
         res.send(sorted);
     });//end get(/error)
-    app.get("/practitioner",(req, res)=>{
+    app.get("/Practitioner",(req, res)=>{
       logger.log({level:levelType.info,operationType:typeOperation.normalProcess,action:"/practitioner",result:typeResult.iniate,
       message:`Start the import CSV file content`});
       let filePath=mappingConfig.app.dataFilePath;
@@ -80,7 +80,7 @@ function setupApp () {
         
       });
     });//end 
-    app.get("/practitionerrole",(req, res)=>{
+    app.get("/PractitionerRole",(req, res)=>{
       logger.log({level:levelType.info,operationType:typeOperation.normalProcess,action:"/practitioner",result:typeResult.iniate,
       message:`Start the import CSV file content`});
       let filePath=mappingConfig.app.dataFilePath;
@@ -94,7 +94,7 @@ function setupApp () {
         
       });
     });//end
-    app.get("/location",(req, res)=>{
+    app.get("/Location",(req, res)=>{
       logger.log({level:levelType.info,operationType:typeOperation.normalProcess,action:"/location",result:typeResult.iniate,
       message:`Start the import CSV file content`});
       let filePath=mappingConfig.app.dataFilePath;
@@ -108,7 +108,7 @@ function setupApp () {
         
       });
     });//end
-    app.get("/job",(req, res)=>{
+    app.get("/ValueSet",(req, res)=>{
       logger.log({level:levelType.info,operationType:typeOperation.normalProcess,action:"/Job-ValueSet",result:typeResult.iniate,
       message:`Start the import CSV file content`});
       let filePath=mappingConfig.app.dataFilePath;
@@ -125,36 +125,6 @@ function setupApp () {
     
     return app
 }
-function chunckTEI(array,size){
-  const chunked_arr = [];
-  let copied = [...array]; // ES6 destructuring
-  const numOfChild = Math.ceil(copied.length / size); // Round up to the nearest integer
-  for (let i = 0; i < numOfChild; i++) {
-    var newTEIcollection={
-      trackedEntityInstances:copied.splice(0, size)
-    };
-    //chunked_arr.push(copied.splice(0, size));
-    chunked_arr.push(newTEIcollection);
-  }
-  return chunked_arr;
-
-}
-function chunckEvents(array,size){
-  const chunked_arr = [];
-  let copied = [...array]; // ES6 destructuring
-  const numOfChild = Math.ceil(copied.length / size); // Round up to the nearest integer
-  for (let i = 0; i < numOfChild; i++) {
-    var newEventcollection={
-      events:copied.splice(0, size)
-    };
-    //chunked_arr.push(copied.splice(0, size));
-    chunked_arr.push(newEventcollection);
-  }
-  return chunked_arr;
-
-}
-
-
 /*****************************************Start the app********************* */
 function start (callback) {
     //filePath=mappingConfig.app.appDirectory;

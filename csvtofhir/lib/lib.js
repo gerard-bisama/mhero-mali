@@ -24,6 +24,12 @@ exports.readCSVData=function readCSVData(filePath,callback)
 }
 exports.buildPractitioner=function buildPractitioner(recordsPractitioner){
     //console.log(ageGroupRange);
+    let bundle={
+        resourceType:"Bundle",
+        type:"history",
+        total:0,
+        entry:[]
+    };
     let listPractitioners=[];
     //Get the mapping profile for the Practitioner
     var practitionerMapping=mappingConfig.mapping.find(mapping=>mapping.resourceType=="Practitioner");
@@ -71,7 +77,21 @@ exports.buildPractitioner=function buildPractitioner(recordsPractitioner){
                     }
                 }
                 if(mappingObject.fhirBaseElement=="telecom"){
-                    practitionerTelecom[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    if(mappingObject.fhirField=="value" && 
+                    mappingConfig.configs.appendCountryCodeToPhoneNumber.append===true)
+                    {
+                        practitionerTelecom[mappingObject.fhirField]=`${mappingConfig.configs.appendCountryCodeToPhoneNumber.value }${record[mappingObject.csvfieldId]}`;
+                    }
+                    if(mappingObject.fhirField=="value" && 
+                    mappingConfig.configs.appendCountryCodeToPhoneNumber.append===false)
+                    {
+                        practitionerTelecom[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    }
+                    if(mappingObject.fhirField!="value")
+                    {
+                        practitionerTelecom[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    }
+                    
                 }
             }
        }
@@ -86,10 +106,26 @@ exports.buildPractitioner=function buildPractitioner(recordsPractitioner){
        
        listPractitioners.push(practitioner);
     }
-    return listPractitioners;
+    if(listPractitioners.length>0){
+        bundle.total=listPractitioners.length;
+        for(let practitioner of listPractitioners){
+            bundle.entry.push(
+                {
+                    resource:practitioner
+                }
+            );
+        }
+    }
+    return bundle;
 }
 exports.buildPractitionerRole=function buildPractitionerRole(recordsPractitioner){
     //console.log(ageGroupRange);
+    let bundle={
+        resourceType:"Bundle",
+        type:"history",
+        total:0,
+        entry:[]
+    };
     let listPractitionersRole=[];
     //Get the mapping profile for the Practitioner
     var practitionerRoleMapping=mappingConfig.mapping.find(mapping=>mapping.resourceType=="PractitionerRole");
@@ -134,22 +170,40 @@ exports.buildPractitionerRole=function buildPractitionerRole(recordsPractitioner
                     practitionerRole[mappingObject.fhirField]={reference:`Practitioner/${record[mappingObject.csvfieldId]}`};
                 }
                 if(mappingObject.fhirBaseElement=="Location"){
-                    practitionerRole[mappingObject.fhirField]={reference:`Location/${record[mappingObject.csvfieldId]}`};
+                    practitionerRole[mappingObject.fhirField]=[{reference:`Location/${record[mappingObject.csvfieldId]}`}];
                 }
             }
        }
        if(codeElement.coding[0].hasOwnProperty("code")||codeElement.coding[0].hasOwnProperty("display")||
        codeElement.hasOwnProperty("text"))
        {
+        //codeElement.coding[0]['system']="http://ihris.org/fhir/CodeSystem/ihris-job";
         practitionerRole["code"]=[codeElement];
        }
        
        listPractitionersRole.push(practitionerRole);
     }
-    return listPractitionersRole;
+    //return listPractitionersRole;
+    if(listPractitionersRole.length>0){
+        bundle.total=listPractitionersRole.length;
+        for(let practitionerRole of listPractitionersRole){
+            bundle.entry.push(
+                {
+                    resource:practitionerRole
+                }
+            );
+        }
+    }
+    return bundle;
 }
 exports.buildLocation=function buildLocation(recordsPractitioner){
     //console.log(ageGroupRange);
+    let bundle={
+        resourceType:"Bundle",
+        type:"history",
+        total:0,
+        entry:[]
+    };
     let listLocations=[];
     let recordsJobs=[];
     var locationMapping=mappingConfig.mapping.find(mapping=>mapping.resourceType=="Location");
@@ -189,10 +243,27 @@ exports.buildLocation=function buildLocation(recordsPractitioner){
 
     }
     //console.log(uniqueListIndices);
-    return listLocations;
+    //return listLocations;
+    if(listLocations.length>0){
+        bundle.total=listLocations.length;
+        for(let resource of listLocations){
+            bundle.entry.push(
+                {
+                    resource:resource
+                }
+            );
+        }
+    }
+    return bundle;
 }
 exports.buildJob=function buildJob(recordsPractitioner){
     //console.log(ageGroupRange);
+    let bundle={
+        resourceType:"Bundle",
+        type:"history",
+        total:0,
+        entry:[]
+    };
     let listJobs=[];
     let recordsJob=[];
     var jobMapping=mappingConfig.mapping.find(mapping=>mapping.resourceType=="Job-ValueSet");
@@ -224,6 +295,7 @@ exports.buildJob=function buildJob(recordsPractitioner){
         compose:{
             include:[
                 {
+                    //system: "http://ihris.org/fhir/CodeSystem/ihris-job",
                     concept:[]
                 }
             ]
@@ -258,7 +330,18 @@ exports.buildJob=function buildJob(recordsPractitioner){
     }
     //console.log(uniqueListIndices);
     listJobs.push(job);
-    return listJobs;
+    //return listJobs;
+    if(listJobs.length>0){
+        bundle.total=listJobs.length;
+        for(let resource of listJobs){
+            bundle.entry.push(
+                {
+                    resource:resource
+                }
+            );
+        }
+    }
+    return bundle;
 }
 
 
