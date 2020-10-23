@@ -239,30 +239,6 @@
               "valueBoolean": true
             }
           ]
-        },
-        {
-          "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
-          "extension": [{
-            "url": "display",
-            "valueString": "Cadre"
-          },
-          {
-              "url": "label",
-              "valueString": "cadre"
-            },
-            {
-              "url": "name",
-              "valueString": "extension.where(url='http://ihris.org/fhir/StructureDefinition/iHIRSPositionDetails').extension.where(url='http://ihris.org/fhir/CodeSystem/ihris-cadre').extension.where(url='name').valueString"
-            },
-            {
-              "url": "filter",
-              "valueBoolean": true
-            },
-            {
-              "url": "dropDownFilter",
-              "valueBoolean": true
-            }
-          ]
         }
       ]
     }
