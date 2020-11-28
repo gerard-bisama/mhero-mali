@@ -18,8 +18,15 @@
                     "fhirBaseElement":"name"
                 },
                 {
-                    "csvfieldId":"nom",
+                    "csvfieldId":"prenom",
                     "fhirField":"family",
+                    "active":true,
+                    "defaultValue":"",
+                    "fhirBaseElement":"name"
+                },
+                {
+                    "csvfieldId":"postnom",
+                    "fhirField":"given",
                     "active":true,
                     "defaultValue":"",
                     "fhirBaseElement":"name"
@@ -154,15 +161,15 @@
             "description": "Sample iHRIS ValueSet for: iHRISJob"
         },
         "appendCountryCodeToPhoneNumber":{
-            "append":true,
+            "append":false,
             "value":"+223"
         }
 
     },
     "app":{
         "port":8000,
-        "dataFilePath":"/home/server-dev/Documents/dev_repo/mhero-mali/csvtofhir/data/data.csv",
-        "headersData":["personid","nom","sexe","telephone","structureid","structure","specialiteid","specialite","practitionerroleid"]
+        "dataFilePath":"/home/server-dev/Documents/dev_repo/mhero-mali/csvtofhir/data/cleaned_datalistexported.csv",
+        "headersData":["personid","prenom","postnom","nom","sexe","telephone","structureid","structure","specialiteid","specialite","practitionerroleid"]
         
     }
 }

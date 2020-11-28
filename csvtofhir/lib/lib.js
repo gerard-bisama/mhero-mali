@@ -60,7 +60,15 @@ exports.buildPractitioner=function buildPractitioner(recordsPractitioner){
             {
                 if(mappingObject.fhirBaseElement=="Practitioner")
                 {
-                    practitioner[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    if(mappingObject.fhirField=="gender" && record[mappingObject.csvfieldId]!="NULL")
+                    {
+                        practitioner[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    }
+                    else if(mappingObject.fhirField!="gender")
+                    {
+                        practitioner[mappingObject.fhirField]=record[mappingObject.csvfieldId];
+                    }
+                    
                 } 
                 if(mappingObject.fhirBaseElement=="name"){
                     switch(mappingObject.fhirField)
