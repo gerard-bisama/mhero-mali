@@ -16,7 +16,7 @@
         :items="results"
         :options.sync="options"
         :server-items-length="total"
-        :footer-props="{ 'items-per-page-options': [5,10,20,50,-1] }"
+        :footer-props="{ 'items-per-page-options': itemsPerPage }"
         :loading="loading"
         class="elevation-1"
         item-key="id"
@@ -64,6 +64,19 @@ export default {
         this.getData();
       },
       deep: true
+    }
+  },
+  computed: {
+    itemsPerPage() {
+      let items = [5,10,20,50]
+      if(this.total > 10000) {
+        items.push(2000)
+        items.push(5000)
+        items.push(10000)
+      } else {
+        items.push(-1)
+      }
+      return items
     }
   },
   created: function() {
@@ -173,6 +186,18 @@ export default {
       this.prevPage = this.options.page;
 
       let body = this.buildTerms()
+      let sorting = []
+      for(let index in this.options.sortBy) {
+        let sortCol = this.options.sortBy[index]
+        let sort = {}
+        if(this.options.sortDesc[index]) {
+          sort[sortCol + '.keyword'] = 'desc'
+        } else {
+          sort[sortCol + '.keyword'] = 'asc'
+        }
+        sorting.push(sort)
+      }
+      body.sort = sorting
       fetch(url, {
         method: 'POST',
         headers: {
@@ -195,7 +220,6 @@ export default {
                   this.results.push(result)
                 }
               }
-              // this.total = data.hits.total.value;
               this.loading = false;
             })
             .catch(err => {

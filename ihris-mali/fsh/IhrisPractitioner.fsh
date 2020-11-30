@@ -1,3 +1,9 @@
+Invariant:      ihris-age-18
+Description:    "birthDate must be more than 18 years ago."
+Expression:     "birthDate < today() - 18 years"
+Severity:       #error
+
+
 Profile:        IhrisPractitioner
 Parent:         Practitioner
 Id:             ihris-practitioner
@@ -5,6 +11,10 @@ Title:          "iHRIS Practitioner"
 Description:    "iHRIS profile of Practitioner."
 * identifier 0..* MS
 * identifier ^label = "Identifier"
+* identifier ^constraint[0].key = "ihris-search-identifier"
+* identifier ^constraint[0].severity = #error
+* identifier ^constraint[0].expression = "'Practitioner' | 'identifier' | iif(system.exists(), system & '|' & value, value)"
+* identifier ^constraint[0].human = "The identifier must be unique and another record has this identifier"
 * identifier.use MS
 * identifier.use ^label = "Use"
 * identifier.type MS
@@ -19,9 +29,13 @@ Description:    "iHRIS profile of Practitioner."
 * name ^label = "Name"
 * name.use MS
 * name.use ^label = "Use"
-* name.family MS
+* name.family 1..1 MS
 * name.family ^label = "Family"
-* name.given MS
+* name.family ^constraint[0].key = "ihris-name-check"
+* name.family ^constraint[0].severity = #error
+* name.family ^constraint[0].expression = "matches('^[A-Za-z ]*$')"
+* name.family ^constraint[0].human = "Name must be only text."
+* name.given 1..* MS
 * name.given ^label = "Given Name"
 * name.prefix MS
 * name.prefix ^label = "Prefix"
@@ -41,7 +55,7 @@ Description:    "iHRIS profile of Practitioner."
 * address.use ^label = "Use"
 * address.type MS
 * address.type ^label = "Type"
-* address.line MS
+* address.line 1..1 MS
 * address.line ^label = "Line"
 * address.city MS
 * address.city ^label = "City"
@@ -57,12 +71,25 @@ Description:    "iHRIS profile of Practitioner."
 * gender ^label = "Gender"
 * birthDate MS
 * birthDate ^label = "Birth Date"
+* birthDate obeys ihris-age-18
+* birthDate ^minValueQuantity.system = "http://unitsofmeasure.org/"
+* birthDate ^minValueQuantity.code = #a
+* birthDate ^minValueQuantity.value = 100
+* birthDate ^maxValueQuantity.system = "http://unitsofmeasure.org/"
+* birthDate ^maxValueQuantity.code = #a
+* birthDate ^maxValueQuantity.value = -18
 * photo 0..1 MS
 * photo ^label = "Photo"
 * communication 0..* MS
 * communication ^label = "Communication"
 * communication.coding 1..1 MS
 * communication.coding ^label = "Language"
+* communication.extension contains
+    IhrisPractitionerLanguageProficiency named proficiency 0..* MS
+* communication.extension[proficiency] MS
+* communication.extension[proficiency] ^label = "Language Proficiency"
+* communication.extension[proficiency].extension[level].valueCoding MS
+* communication.extension[proficiency].extension[type].valueCoding MS
 * extension contains 
     IhrisPractitionerResidence named residence 0..1 MS and
     IhrisPractitionerNationality named nationality 0..1 and
@@ -70,6 +97,24 @@ Description:    "iHRIS profile of Practitioner."
     IhrisPractitionerDependents named dependents 0..1 
 * extension[residence].valueReference.reference MS
 
+Extension:      IhrisPractitionerLanguageProficiency
+Id:             ihris-practitioner-language-proficiency
+Title:          "iHRIS Practitioner Language Proficiency"
+Description:    "iHRIS extension for Practitioner Language Proficiency."
+* ^context.type = #element
+* ^context.expression = "Practitioner"
+* extension contains 
+    level 0..1 MS and
+    type 0..* MS
+* extension[level].value[x] only Coding
+* extension[level].valueCoding 0..1 MS
+* extension[level].valueCoding from http://terminology.hl7.org/ValueSet/v3-LanguageAbilityProficiency
+* extension[level].valueCoding ^label = "Proficiency Level"
+* extension[type] ^label = "Proficiency Type"
+* extension[type].value[x] only Coding
+* extension[type].valueCoding 0..1 MS
+* extension[type].valueCoding ^label = "Proficiency Type"
+* extension[type].valueCoding from http://terminology.hl7.org/ValueSet/v3-LanguageAbilityMode
 
 Extension:      IhrisPractitionerResidence
 Id:             ihris-practitioner-residence
@@ -80,6 +125,10 @@ Description:    "iHRIS extension for Practitioner residence."
 * value[x] only Reference
 * valueReference 1..1 MS
 * valueReference ^label = "Residence"
+* valueReference ^constraint[0].key = "ihris-location-residence"
+* valueReference ^constraint[0].severity = #warning
+* valueReference ^constraint[0].expression = "reference.matches('^Location/')"
+* valueReference ^constraint[0].human = "Must be a location"
 * valueReference only Reference(Location)
 * valueReference.reference 1..1 MS
 * valueReference.reference ^label = "Location"
@@ -136,7 +185,7 @@ Description:    "iHRIS extension for Practitioner number of dependents."
 
 
 Instance:       IhrisPractitionerQuestionnaire
-InstanceOf:     Questionnaire
+InstanceOf:     IhrisQuestionnaire
 Usage:          #definition
 * title = "iHRIS Practitioner Questionnaire"
 * description = "iHRIS Practitioner initial data entry questionnaire."
@@ -251,7 +300,7 @@ Usage:          #definition
 * item[1].item[0].item[2].definition = "http://ihris.org/fhir/StructureDefinition/ihris-practitioner#Practitioner.address.line"
 * item[1].item[0].item[2].text = "Street Address"
 * item[1].item[0].item[2].type = #string
-* item[1].item[0].item[2].required = false
+* item[1].item[0].item[2].required = true
 * item[1].item[0].item[2].repeats = true
 
 * item[1].item[0].item[3].linkId = "Practitioner.address[0].city"
@@ -347,6 +396,10 @@ Usage:          #definition
 * item[2].definition = "http://ihris.org/fhir/StructureDefinition/ihris-practitioner-role"
 * item[2].text = "Position|Position the person holds"
 * item[2].type = #group
+* item[2].extension[constraint][0].extension[key].valueId = "ihris-start-end-date"
+* item[2].extension[constraint][0].extension[severity].valueCode = #error
+* item[2].extension[constraint][0].extension[expression].valueString = "where(linkId='PractitionerRole.period.end').answer.first().valueDateTime.empty() or where(linkId='PractitionerRole.period.end').answer.first().valueDateTime >= where(linkId='PractitionerRole.period.start').answer.first().valueDateTime"
+* item[2].extension[constraint][0].extension[human].valueString = "The end date must be after the start date."
 
 * item[2].item[0].linkId = "PractitionerRole.practitioner"
 * item[2].item[0].definition = "http://ihris.org/fhir/StructureDefinition/ihris-practitioner-role#PractitionerRole.practitioner"

@@ -1,7 +1,8 @@
 <template>
   <ihris-element :edit="edit" :loading="false">
     <template #form>
-      <v-text-field :label="display" :disabled="disabled" :name="field" v-model.number="value" outlined hide-details="auto" dense>
+      <v-text-field :error-messages="errors" @change="errors = []" :label="display" :disabled="disabled" :name="field" v-model.number="value" outlined hide-details="auto" :rules="rules" dense>
+        <template #label>{{display}} <span v-if="required" class="red--text font-weight-bold">*</span></template>
       </v-text-field>
     </template>
     <template #header>
@@ -18,7 +19,8 @@ import IhrisElement from "../ihris/ihris-element.vue"
 
 export default {
   name: "fhir-positive-int",
-  props: ["field", "label", "min", "max", "id", "path", "slotProps", "sliceName","base-min","base-max", "edit", "readOnlyIfSet"],
+  props: ["field", "label", "min", "max", "id", "path", "slotProps", "sliceName","base-min","base-max", "edit", "readOnlyIfSet",
+    "constraints"],
   components: {
     IhrisElement
   },
@@ -26,7 +28,9 @@ export default {
     return {
       source: { path: "", data: {} },
       value: "",
-      disabled: false
+      disabled: false,
+      errors: [],
+      lockWatch: false
     }
   },
   created: function() {
@@ -37,7 +41,9 @@ export default {
     slotProps: {
       handler() {
         //console.log("WATCH POSITIVE INT",this.field,this.path,this.slotProps)
-        this.setupData()
+        if ( !this.lockWatch ) {
+          this.setupData()
+        }
       },
       deep: true
     }
@@ -49,6 +55,7 @@ export default {
         if ( this.slotProps.source.fromArray ) {
           this.source.data = this.slotProps.source.data
           this.value = this.source.data
+          this.lockWatch = true
           //console.log("SET value to ", this.source.data, this.slotProps.input)
         } else {
           let expression = this.$fhirutils.pathFieldExpression( this.field )
@@ -56,6 +63,7 @@ export default {
           //console.log("STR FHIRPATH", this.slotProps.source.data, this.field)
           if ( this.source.data.length == 1 ) {
             this.value = this.source.data[0]
+            this.lockWatch = true
           }
         }
         this.disabled = this.readOnlyIfSet && (!!this.value)
@@ -71,6 +79,20 @@ export default {
     display: function() {
       if ( this.slotProps && this.slotProps.input ) return this.slotProps.input.label
       else return this.label
+    },
+    required: function() {
+      return (this.index || 0) < this.min
+    },
+    rules: function() {
+      const num_check = v => {
+        let num = Number(v)
+        return (Number.isInteger(num) && num >= 0) || this.display+" must be a positive integer"
+      }
+      let rules = [ num_check ]
+      if ( this.required ) {
+        rules.push ( v => !!v || this.display+" is required" )
+      }
+      return rules
     }
   }
 }

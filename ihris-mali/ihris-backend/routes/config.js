@@ -251,6 +251,7 @@ router.get('/page/:page/:type?', function(req, res) {
       let allSubFields = {}
       let allColumns = {}
       let allActions = {}
+      let constraints = {}
 
       let vueOuput = "<template>"
       for ( let fhir of structureKeys ) {
@@ -275,7 +276,7 @@ router.get('/page/:page/:type?', function(req, res) {
           resourceElement = "ihris-codesystem"
         }
 
-        vueOutput = '<'+resourceElement+' :fhir-id="fhirId" :edit="isEdit" v-on:set-edit="setEdit($event)" profile="'+resource.url+'" :key="$route.params.page+($route.params.id || \'\')" page="'+req.params.page+'" field="'+fhir+'" title="'+sections[fhir].title+'"'
+        vueOutput = '<'+resourceElement+' :fhir-id="fhirId" :edit="isEdit" v-on:set-edit="setEdit($event)" profile="'+resource.url+'" :key="$route.params.page+($route.params.id || \'\')" page="'+req.params.page+'" field="'+fhir+'" title="'+sections[fhir].title+'" :constraints="constraints"'
         if ( sectionKeys.length > 1 ) {
           sectionMenu = sectionKeys.map( name => { return { name: name, title: sections[name].title, desc: sections[name].description, secondary: !!sections[name].resource } } )
           vueOutput += " :section-menu='sectionMenu'"
@@ -313,7 +314,7 @@ router.get('/page/:page/:type?', function(req, res) {
             let attrs = [ "field", "sliceName", "targetProfile", "profile", "min", "max", "base-min",
               "base-max", "label", "path", "binding", "calendar" ]
             const minmax = [ "Date", "DateTime", "Instant", "Time", "Decimal", "Integer", "PositiveInt",
-              "UnsignedInt" ]
+              "UnsignedInt", "Quantity" ]
             for( let mm of minmax ) {
               for( let type of [ "min", "max" ] ) {
                 attrs.push( type+"Value"+mm )
@@ -342,9 +343,26 @@ router.get('/page/:page/:type?', function(req, res) {
                 output += " :readOnlyIfSet=\""+ pageFields[ fields[field].id ].readOnlyIfSet +"\""
               }
             }
+            if ( fields[field].hasOwnProperty("constraint") ) {
+              let constraintKeys = []
+              for( let constraint of fields[field].constraint ) {
+                if ( constraint.key && constraint.key.startsWith("ihris-") ) {
+                  constraints[ constraint.key ] = constraint
+                  constraintKeys.push( constraint.key )
+                }
+              }
+              if ( constraintKeys.length > 0 ) {
+                output += " constraints=\"" + constraintKeys.join(",") + "\""
+              }
+            }
             for( let attr of attrs ) {
               if ( fields[field].hasOwnProperty(attr) ) {
-                output += " "+attr+"=\""+fields[field][attr]+"\""
+                if ( fields[field][attr]
+                  && fields[field][attr].value && fields[field][attr].code ) {
+                  output += " "+attr+"=\""+fields[field][attr].value+fields[field][attr].code+"\""
+                } else {
+                  output += " "+attr+"=\""+fields[field][attr]+"\""
+                }
               } else if ( nconf.get("defaults:components:"+eleName+":"+attr) ) {
                 output += " "+attr+"=\""
                   +nconf.get("defaults:components:"+eleName+":"+attr)+"\""
@@ -433,7 +451,8 @@ router.get('/page/:page/:type?', function(req, res) {
         subFields: allSubFields,
         columns: allColumns,
         actions: allActions,
-        links: links
+        links: links,
+        constraints: constraints
       } })
     }
 
@@ -591,15 +610,51 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
   fhirAxios.read( "Questionnaire", req.params.questionnaire ).then ( async (resource) => {
 
 
-    let vueOutput = '<ihris-questionnaire :edit=\"isEdit\" :view-page="viewPage" url="' + resource.url + '" id="' + resource.id
+    let vueOutput = '<ihris-questionnaire :edit=\"isEdit\" :view-page="viewPage" :constraints="constraints" url="' + resource.url + '" id="' + resource.id
       + '" title="' + resource.title
       + '" description="' + resource.description + '" purpose="' + resource.purpose
       + '"__SECTIONMENU__>' + "\n"
 
 
     let sectionMenu = []
-    let templateData = { sectionMenu: {}, hidden: {} }
+    let templateData = { sectionMenu: {}, hidden: {}, constraints: {} }
 
+    const processConstraints = ( extension, fieldDef ) => {
+      let constraintKeys = []
+      if ( fieldDef && fieldDef.hasOwnProperty("constraint") ) {
+        for( let constraint of fieldDef.constraint ) {
+          if ( constraint.key && constraint.key.startsWith('ihris-') ) {
+            templateData.constraints[ constraint.key ] = constraint
+            constraintKeys.push( constraint.key )
+          }
+        }
+      }
+      if ( extension ) {
+        let itemConstraints = extension.filter( ext => ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-constraint" )
+        for( let itemCon of itemConstraints ) {
+          let constraint = {}
+          try {
+            let key = itemCon.extension.find( ext => ext.url === "key" ).valueId
+            let severity = itemCon.extension.find( ext => ext.url === "severity" ).valueCode
+            let expression = itemCon.extension.find( ext => ext.url === "expression" ).valueString
+            let human = itemCon.extension.find( ext => ext.url === "human" ).valueString
+            if ( key.startsWith("ihris-") ) {
+              constraint = { key, severity, expression, human }
+              templateData.constraints[ constraint.key ] = constraint
+              constraintKeys.push( constraint.key )
+            }
+          } catch(err) {
+            winston.error( "Failed to get constraints on "+item.linkId )
+            winston.error( err.message )
+          }
+        }
+      }
+      if ( constraintKeys.length > 0 ) {
+        return constraintKeys.join(",")
+      } else {
+        return null
+      }
+    }
     const processQuestionnaireItems = async ( items ) => {
       let vueOutput = ""
       for( let item of items ) {
@@ -619,6 +674,12 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
           vueOutput += '<ihris-questionnaire-group :edit=\"isEdit\" path="' + item.linkId + '" label="' + label[0] + '"'
           if ( label.length === 2 ) {
             vueOutput += ' description="' + label[1] + '"'
+          }
+          if ( item.extension ) {
+            let constraintList = processConstraints( item.extension )
+            if ( constraintList ) {
+              vueOutput += ' constraints="' + constraintList + '"'
+            }
           }
           vueOutput += ">\n\n"
           vueOutput += await processQuestionnaireItems( item.item )
@@ -649,12 +710,17 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
               vueOutput += " targetProfile=\""+field.type[0].targetProfile[0]+"\""
             }
             const minmax = [ "Date", "DateTime", "Instant", "Time", "Decimal", "Integer", "PositiveInt",
-              "UnsignedInt" ]
+              "UnsignedInt", "Quantity" ]
             for( let mm of minmax ) {
               for( let type of [ "min", "max" ] ) {
                 let attr = type+"Value"+mm
                 if ( field.hasOwnProperty(attr) ) {
-                  vueOutput += " "+attr+"=\""+field[attr]+"\""
+                  if ( field[attr]
+                    && field[attr].value && field[attr].code ) {
+                    vueOutput += " "+attr+"=\""+field[attr].value+field[attr].code+"\""
+                  } else {
+                    vueOutput += " "+attr+"=\""+field[attr]+"\""
+                  }
                 } else if ( nconf.get("defaults:components:"+itemType+":"+attr) ) {
                   vueOutput += " "+attr+"=\""
                     +nconf.get("defaults:components:"+itemType+":"+attr)+"\""
@@ -670,6 +736,13 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
             }
           }
 
+          if ( item.extension || (field && field.hasOwnProperty("constraint") ) ) {
+            let constraintList = processConstraints( item.extension, field )
+            if ( constraintList ) {
+              vueOutput += ' constraints="' + constraintList + '"'
+            }
+          }
+
           if ( item.hasOwnProperty("text") ) {
             vueOutput += " label=\""+ item.text + "\""
           }
@@ -679,12 +752,24 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
           if ( displayType ) {
             vueOutput += " displayType=\""+ displayType +"\""
           }
+          if ( item.required ) {
+            vueOutput += ' min="1"'
+          } else {
+            vueOutput += ' min="0"'
+          }
+          if ( item.repeats ) {
+            vueOutput += ' max="*"'
+          } else {
+            vueOutput += ' max="1"'
+          }
+          /*
           let attrs = [ "required" ]
           for( let attr of attrs ) {
             if ( item.hasOwnProperty(attr) ) {
               vueOutput += " " + attr + "=\""+ item[attr] + "\""
             }
           }
+          */
           vueOutput += "></fhir-" + itemType +">\n"
 
         }
@@ -706,6 +791,12 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
         vueOutput += '<ihris-questionnaire-section id="' + sectionId + '" path="' + item.linkId + '" label="' + label[0] + '"'
         if ( label.length === 2 ) {
           vueOutput += ' description="' + label[1] + '"'
+        }
+        if ( item.extension ) {
+          let constraintList = processConstraints( item.extension )
+          if ( constraintList ) {
+            vueOutput += ' constraints="' + constraintList +'"'
+          }
         }
         sectionMenu.push( { title: label[0], desc: label[1] || "", id: sectionId } )
         vueOutput += ">\n"
@@ -739,7 +830,8 @@ router.get('/questionnaire/:questionnaire', function(req, res) {
 } )
 
 router.get('/report/es/:report', (req, res) => {
-  let report = "ihris-es-report-" + req.params.report
+  let report = req.params.report
+  console.log(report);
   if (!req.user) {
     return res.status(401).json(outcomes.NOTLOGGEDIN)
   }

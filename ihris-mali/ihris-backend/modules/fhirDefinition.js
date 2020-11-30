@@ -84,7 +84,7 @@ const fhirDefinition = {
         }
       }
 
-      const copies = ["id", "path", "label", "sliceName", "min", "max" ]
+      const copies = ["id", "path", "label", "sliceName", "min", "max", "constraint" ]
       for( let copy of copies ) {
         if ( ele.hasOwnProperty(copy) ) {
           piece[copy] = ele[copy]
@@ -94,7 +94,7 @@ const fhirDefinition = {
       }
 
       const min_max_copies = [ "Date", "DateTime", "Instant", "Time", "Decimal", "Integer", 
-        "PositiveInt", "UnsignedInt" ]
+        "PositiveInt", "UnsignedInt", "Quantity" ]
       for( let copy of min_max_copies ) {
         for( let type of [ "min", "max" ] ) {
           let prop = type+"Value"+copy

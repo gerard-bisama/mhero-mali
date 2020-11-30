@@ -8,13 +8,16 @@
         :items="items" 
         outlined 
         hide-details="auto" 
-        :error-messages="err_messages"
-        :error="error"
+        :error-messages="errors"
         item-text="display"
         item-value="code"
         :disabled="disabled"
+        :rules="rules"
         dense
-      ></v-select>
+        @change="errors = []"
+      >
+        <template #label>{{display}} <span v-if="required" class="red--text font-weight-bold">*</span></template>
+      </v-select>
     </template>
     <template #header>
       {{display}}
@@ -35,7 +38,8 @@ const itemSort = (a,b) => {
 */
 export default {
   name: "fhir-coding",
-  props: ["field","label","sliceName","targetprofile","min","max","base-min","base-max","slotProps","path","binding","edit","readOnlyIfSet"],
+  props: ["field","label","sliceName","targetprofile","min","max","base-min","base-max","slotProps","path","binding","edit","readOnlyIfSet",
+    "constraints"],
   components: {
     IhrisElement
   },
@@ -45,11 +49,12 @@ export default {
       valueCode: "",
       valueDisplay: "",
       loading: true,
-      err_messages: null,
-      error: false,
+      errors: [],
+      //error: false,
       items: [],
       source: { path: "", data: {}, binding: this.binding },
-      disabled: false
+      disabled: false,
+      lockWatch: false
     }
   },
   created: function() {
@@ -59,7 +64,9 @@ export default {
     slotProps: {
       handler() {
         //console.log("WATCH CODING",this.path,this.slotProps)
-        this.setupData()
+        if ( !this.lockWatch ) {
+          this.setupData()
+        }
       },
       deep: true
     },
@@ -88,6 +95,7 @@ export default {
           if ( this.source.data ) {
             this.value = this.source.data
             this.valueCode = this.value.code
+            this.lockWatch = true
             //console.log("set",this.value,this.valueCode)
           }
         } else {
@@ -98,6 +106,7 @@ export default {
           if ( this.source.data[0] ) {
             this.value = this.source.data[0]
             this.valueCode = this.value.code
+            this.lockWatch = true
           }
         }
         this.disabled = this.readOnlyIfSet && (!!this.valueCode)
@@ -108,8 +117,8 @@ export default {
         this.loading = false
       } ).catch( err => {
         console.log(err)
-        this.error = true
-        this.err_messages = err.message
+        //this.error = true
+        this.errors = err.message
         this.loading = false
       } )
       //console.log("CODING",binding)
@@ -141,11 +150,11 @@ export default {
               this.items.sort( itemSort )
             } catch(err) {
               this.error = true
-              this.err_messages = "Invalid response from server."
+              this.errors = "Invalid response from server."
             }
             this.loading = false
           }).catch(err=>{
-            this.err_messages = err.message
+            this.errors = err.message
             this.error = true
             this.loading = false
           })
@@ -170,24 +179,24 @@ export default {
                 this.items.sort( itemSort )
                 this.loading = false
               }).catch(err=>{
-                this.err_messages = err.message
+                this.errors = err.message
                 this.error = true
                 this.loading = false
               })
             } else {
               this.error = true
-              this.err_messages = "Invalid response from server."
+              this.errors = "Invalid response from server."
               this.loading = false
             }
           }).catch(err=>{
-            this.err_messages = err.message
+            this.errors = err.message
             this.error = true
             this.loading = false
           })
 
         }
       }).catch(err=>{
-        this.err_messages = err.message
+        this.errors = err.message
         this.error = true
         this.loading = false
       })
@@ -195,9 +204,23 @@ export default {
     }
   },
   computed: {
+    index: function() {
+      if ( this.slotProps && this.slotProps.input ) return this.slotProps.input.index
+      else return undefined
+    },
     display: function() {
       if ( this.slotProps && this.slotProps.input) return this.slotProps.input.label
       else return this.label
+    },
+    required: function() {
+      return (this.index || 0) < this.min
+    },
+    rules: function() {
+      if ( this.required ) {
+        return [ v => !!v || this.display+" is required" ]
+      } else {
+        return []
+      }
     }
     /*
     displayValue: function() {

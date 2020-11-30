@@ -86,7 +86,7 @@
         src="@/assets/mHero.png"
         width="100"
       ></v-img>
-      <ihrisReport report='scheduled-messages'></ihrisReport>
+      <ihrisReport report='ihris-es-report-scheduled-messages'></ihrisReport>
       <v-card-actions class="secondary">
         <v-spacer></v-spacer>
         <v-btn
@@ -151,7 +151,10 @@ export default {
         body: JSON.stringify(data),
         redirect: "manual"
       };
+      this.$store.state.progress.enabled = true
+      this.$store.state.progress.title = "Cancelling schedule"
       fetch(url, opts).then((response) => {
+        this.$store.state.progress.enabled = false
         this.statusDialog.enable = true
         if(response.status >= 200 && response.status <= 299) {
           this.statusDialog.color = 'success'
@@ -163,6 +166,7 @@ export default {
           this.statusDialog.description = 'Failed to Cancel Schedule'
         }
       }).catch(err => {
+        this.$store.state.progress.enabled = false
         this.statusDialog.enable = true
         this.statusDialog.color = 'error'
         this.statusDialog.title = 'Error'

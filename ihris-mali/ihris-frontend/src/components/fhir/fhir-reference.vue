@@ -14,8 +14,13 @@
         outlined
         dense
         placeholder="Start typing for selection"
+        :rules="rules"
         :disabled="(disabled) || (preset && $route.name === 'resource_add')"
-      ></v-autocomplete>
+        :error-messages="errors"
+        @change="errors = []"
+      >
+        <template #label>{{display}} <span v-if="required" class="red--text font-weight-bold">*</span></template>
+      </v-autocomplete>
     </template>
     <template #header>
       {{display}}
@@ -33,7 +38,7 @@ const querystring = require('querystring')
 export default {
   name: "fhir-reference",
   props: ["field","label","sliceName","targetProfile","min","max","base-min","base-max",
-    "slotProps","path","sub-fields","edit","readOnlyIfSet"],
+    "slotProps","path","sub-fields","edit","readOnlyIfSet","constraints"],
   components: {
     IhrisElement
   },
@@ -50,7 +55,9 @@ export default {
       awaitingSearch: false,
       displayValue: "",
       preset: false,
-      disabled: false
+      disabled: false,
+      errors: [],
+      lockWatch: false
     }
   },
   created: function() {
@@ -60,7 +67,9 @@ export default {
     slotProps: {
       handler() {
         //console.log("WATCH REFERENCE",this.path,this.slotProps)
-        this.setupData()
+        if ( !this.lockWatch ) {
+          this.setupData()
+        }
       },
       deep: true
     },
@@ -95,6 +104,7 @@ export default {
         if( this.source.data ) {
           this.preset = true
           this.select = this.source.data.reference
+          this.lockWatch = true
         }
       }
       this.disabled = this.readOnlyIfSet && this.preset
@@ -142,6 +152,16 @@ export default {
     display: function() {
       if ( this.slotProps && this.slotProps.input) return this.slotProps.input.label
       else return this.label
+    },
+    required: function() {
+      return (this.index || 0) < this.min 
+    },
+    rules: function() {
+      if ( this.required ) {
+        return [ v => !!v || this.display+" is required" ]
+      } else {
+        return []
+      }
     }
   }
 
